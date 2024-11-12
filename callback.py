@@ -216,7 +216,7 @@ async def form_orders(msg: Message, state: FSMContext):
         if order[1] == msg.text:
             await msg.answer('Что сделать с заказом:', reply_markup=await orders_kb())
             await state.update_data(orders=order[1])
-
+            pass
 
 # @rt.message(Form.required_wallet)
 # async def form_wallet(msg: Message, state: FSMContext):
