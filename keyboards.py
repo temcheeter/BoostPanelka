@@ -109,6 +109,12 @@ async def ready_to_buy():
     return builder.as_markup()
 
 
+async def orders_kb():
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text='Рефилл♻️', callback_data='refill'), InlineKeyboardButton(text='Отмена❌', callback_data='cancel'))
+    builder.row(InlineKeyboardButton(text='⤵Домой⤵', callback_data='home'))
+    return builder.as_markup()
+
 # async def services1_kb():
 #     services_keyboard = InlineKeyboardBuilder(
 #

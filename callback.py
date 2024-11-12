@@ -2,7 +2,7 @@ from aiogram.types import CallbackQuery, Message
 from aiogram import Router, F
 
 import keyboards
-from keyboards import Pagination, paginator, Services, pre_buy_kb, ready_to_buy, home_kb
+from keyboards import Pagination, paginator, Services, pre_buy_kb, ready_to_buy, home_kb, orders_kb, main_kb
 from contextlib import suppress
 from aiogram.exceptions import TelegramBadRequest
 from api import get_services, get_fullname, get_info_id, make_order, get_order_info, get_orders_info
@@ -97,6 +97,10 @@ async def top_up(call: CallbackQuery, state: FSMContext):
     await state.set_state(Form.payment)
     await call.message.answer('На какую сумму вы хотите пополнить баланс(рублей)?')
 
+
+@rt.callback_query(F.data == 'home')
+async def to_home(call: CallbackQuery):
+    await call.message.answer('Дом милый дом😊', reply_markup=main_kb)
 
 class Form(StatesGroup):
     wallet = State()
@@ -207,7 +211,11 @@ async def form_payment(msg: Message, state: FSMContext):
 
 @rt.message(Form.orders)
 async def form_orders(msg: Message, state: FSMContext):
-    pass
+    orders = db.get_orders(msg.from_user.id)
+    for order in orders:
+        if order[1] == msg.text:
+            await msg.answer('Что сделать с заказом:', reply_markup=await orders_kb())
+            await state.update_data(orders=order[1])
 
 
 # @rt.message(Form.required_wallet)

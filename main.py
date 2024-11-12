@@ -57,7 +57,7 @@ async def support(msg: Message):
 
 
 @dp.message(F.text == '⤵Домой⤵')
-async def to_home(msg: Message='', user_id=0):
+async def to_home(msg: Message = '', user_id=0):
     if not user_id:
         user_id = msg.from_user.id
     state_with: FSMContext = FSMContext(
