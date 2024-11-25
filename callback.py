@@ -1,11 +1,10 @@
 from aiogram.types import CallbackQuery, Message
 from aiogram import Router, F
-
 import keyboards
 from keyboards import Pagination, paginator, Services, pre_buy_kb, ready_to_buy, home_kb, orders_kb, main_kb
 from contextlib import suppress
 from aiogram.exceptions import TelegramBadRequest
-from api import get_services, get_fullname, get_info_id, make_order, get_order_info, get_orders_info
+from api import get_services, get_fullname, get_info_id, make_order, get_order_info, get_orders_info, cancill
 from aiogram.types import InputMediaPhoto as IMP, URLInputFile
 import database as db
 from aiogram.fsm.state import StatesGroup, State
@@ -64,7 +63,7 @@ async def referal_system_menu(call: CallbackQuery):
     await call.message.answer(txt)
     await call.message.answer(f'`https://t.me/Boost_Panelka_BOT?start=kentId{call.from_user.id}`', parse_mode='MARKDOWN')
 
-
+# orders management
 @rt.callback_query(F.data == 'orders')
 async def orders(call: CallbackQuery, state: FSMContext):
     orders_ = await db.get_orders()
@@ -84,6 +83,38 @@ ID: ```{order[2]}```
     await call.message.answer(txt, parse_mode='MARKDOWN')
     await call.message.answer('Введите ID заказа для взаимодействия:', reply_markup=home_kb)
     await state.set_state(Form.orders)
+
+
+@rt.callback_query(F.data.startswith('refill'))
+async def order_refill(call: CallbackQuery, state: FSMContext):
+    user_id = call.from_user.id
+    data = await state.get_data()
+    order_id = data['orders']
+    response = await cancill(order_id, True)
+    if response:
+        await call.message.answer('Да здравствует рефилл!', reply_markup=main_kb)
+
+
+@rt.callback_query(F.data.startswith('refill'))
+async def order_refill(call: CallbackQuery):
+    user_id = call.from_user.id
+    order_id = call.data.split('_')[1]
+    response = await cancill(order_id, True)
+    if response:
+        await call.message.answer('Да здравствует рефилл!', reply_markup=main_kb)
+    else:
+        await call.message.answer('Ошибочка. Почему - не знаю(')
+
+
+@rt.callback_query(F.data.startswith('cancel'))
+async def order_refill(call: CallbackQuery):
+    user_id = call.from_user.id
+    order_id = call.data.split('_')[1]
+    response = await cancill(order_id, False)
+    if response:
+        await call.message.answer('Да здравствует отмена!', reply_markup=main_kb)
+    else:
+        await call.message.answer('Ошибочка. Почему - не знаю(')
 
 
 @rt.callback_query(F.data == 'support')
@@ -116,6 +147,7 @@ class Form(StatesGroup):
     payment = State()
     deal_done = State()
     orders = State()
+    order_action = State()
 
 
 @rt.callback_query(F.data.startswith('buy_'))
@@ -191,8 +223,8 @@ async def ready_to_buy1(call: CallbackQuery, state: FSMContext):
         print(order_info['charge'])
         await db.add_order(call.from_user.id, response['order'], data['name'], float(order_info['charge']) * 2, data['quantity'], order_info['status'], data['id'])
     else:
-        await state.set_state(Form.payment)
         await call.message.answer(f'На вашем балансе недостаточно средств🤷‍♂️‍. На какую сумму вы хотите пополнить баланс(число)?', reply_markup=home_kb)
+        await state.set_state(Form.payment)
 
 
 @rt.message(Form.payment)
@@ -211,12 +243,21 @@ async def form_payment(msg: Message, state: FSMContext):
 
 @rt.message(Form.orders)
 async def form_orders(msg: Message, state: FSMContext):
-    orders = db.get_orders(msg.from_user.id)
-    for order in orders:
+    user_orders = await db.get_orders(msg.from_user.id)
+    success = False
+    for order in user_orders:
         if order[1] == msg.text:
-            await msg.answer('Что сделать с заказом:', reply_markup=await orders_kb())
-            await state.update_data(orders=order[1])
-            pass
+            await msg.answer('Что сделать с заказом:', reply_markup=await orders_kb(msg.text))
+            success = True
+            await state.clear()
+            break
+    if not success:
+        await msg.answer('Ордер не найден(', reply_markup=main_kb)
+        await state.clear()
+
+
+
+
 
 # @rt.message(Form.required_wallet)
 # async def form_wallet(msg: Message, state: FSMContext):

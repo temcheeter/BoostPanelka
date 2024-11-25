@@ -183,6 +183,27 @@ async def get_orders_info(orders):
     return response.json()
 
 
+async def cancill(order_id, refill: bool = False):
+    link = 'https://vexboost.ru/api/v2'
+    token = 'Pdsi4nmQu8fFyPL1TOQObWwZzuOuz2gU9VRRUYv7fGu7WaBVknc99rxTLCny'
+    action = 'refill' if refill else 'cancel'
+    params = {
+        'action': action,
+        'order': order_id,
+        'key': token
+    }
+    response = req.get(link, params=params).json()
+    if response['refill']:
+        return True
+    else:
+        return False
+
+
+async def cancel(order_id):
+    link = 'https://vexboost.ru/api/v2'
+    token = 'Pdsi4nmQu8fFyPL1TOQObWwZzuOuz2gU9VRRUYv7fGu7WaBVknc99rxTLCny'
+
+
 async def updater():
     while True:
         await get_json()
